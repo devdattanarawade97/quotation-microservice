@@ -1,11 +1,12 @@
 from fastapi.testclient import TestClient
-from app import app
 from unittest.mock import patch
 
 # Patch config for testing to ensure mock LLM is used
 @patch('config.USE_MOCK_LLM', True)
 @patch('config.OPENAI_API_KEY', None)
 def test_create_quote_success():
+    # ✅ Import AFTER patches are applied
+    from app import app  
     client = TestClient(app)
     request_payload = {
         "client": {"name": "Gulf Eng.", "contact": "omar@client.com", "lang": "en"},
@@ -48,6 +49,8 @@ def test_create_quote_success():
 @patch('config.USE_MOCK_LLM', True)
 @patch('config.OPENAI_API_KEY', None)
 def test_create_quote_empty_items():
+        # ✅ Import AFTER patches are applied
+    from app import app  
     client = TestClient(app)
     request_payload = {
         "client": {"name": "Test Client", "contact": "test@client.com", "lang": "en"},
