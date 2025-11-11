@@ -2,7 +2,7 @@ import os
 import pytest
 import numpy as np
 from unittest.mock import patch, MagicMock
-from services.rag_core import RAGCore
+from services.rag_core import RAGCore, FAISS_AVAILABLE
 from services.llm_utils import get_mock_embedding, get_llm_response_rag
 
 # Mock FAISS for tests if it's not available in the test environment
@@ -10,7 +10,7 @@ from services.llm_utils import get_mock_embedding, get_llm_response_rag
 # though actual FAISS should be tested if possible.
 @pytest.fixture(autouse=True)
 def mock_faiss_import():
-    if not RAGCore.FAISS_AVAILABLE:
+    if not FAISS_AVAILABLE:
         with patch('services.rag_core.faiss', new=MagicMock()) as mock_faiss:
             mock_faiss.IndexFlatL2.return_value = MagicMock()
             mock_faiss.IndexFlatL2.return_value.search.return_value = (np.array([[0.1]]), np.array([[0]]))
@@ -29,7 +29,7 @@ def mock_data_dir(tmp_path):
     doc1_en.write_text("The quick brown fox jumps over the lazy dog. Fox is an animal.")
 
     doc2_ar = data_path / "document2_ar.txt"
-    doc2_ar.write_text("القط السريع البني يقفز فوق الكلب الكسول. الكلب حيوان.")
+    doc2_ar.write_text("القط السريع البني يقفز فوق الكلب الكسول. الكلب حيوان.", encoding='utf-8')
     
     return data_path
 
@@ -44,6 +44,12 @@ def test_rag_pipeline_english_query(mock_data_dir):
 
     query = "What is a fox?"
     response = rag_core.query(query_text=query, language="en")
+   
+    print(f"\n--- Test: English Query ---")
+    print(f"Query: {query}")
+    print(f"Answer: {response['answer']}")
+    print(f"Citations: {response['citations']}")
+    print(f"Retrieved Chunks: {response['retrieved_chunks']}")
 
     assert "answer" in response
     assert isinstance(response["answer"], str)
@@ -66,6 +72,12 @@ def test_rag_pipeline_arabic_query(mock_data_dir):
     query = "ما هو الكلب؟" # What is a dog?
     response = rag_core.query(query_text=query, language="ar")
 
+    print(f"\n--- Test: Arabic Query ---")
+    print(f"Query: {query}")
+    print(f"Answer: {response['answer']}")
+    print(f"Citations: {response['citations']}")
+    print(f"Retrieved Chunks: {response['retrieved_chunks']}")
+
     assert "answer" in response
     assert isinstance(response["answer"], str)
     assert len(response["answer"]) > 0
@@ -86,6 +98,12 @@ def test_rag_no_relevant_context(mock_data_dir):
     query = "What is the capital of France?" # Irrelevant query
     response = rag_core.query(query_text=query, language="en", top_k=1)
     
+    print(f"\n--- Test: No Relevant Context Query ---")
+    print(f"Query: {query}")
+    print(f"Answer: {response['answer']}")
+    print(f"Citations: {response['citations']}")
+    print(f"Retrieved Chunks: {response['retrieved_chunks']}")
+
     assert "answer" in response
     assert isinstance(response["answer"], str)
     assert "not directly answering" in response["answer"] or "cannot answer" in response["answer"]
