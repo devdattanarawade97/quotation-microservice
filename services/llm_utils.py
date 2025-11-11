@@ -1,48 +1,84 @@
-import openai
-from mocks.mock_llm_service import MockLLMService
-from config import USE_MOCK_LLM, OPENAI_API_KEY
+import time
+import numpy as np
+import hashlib
+from typing import List, Optional
 
+def get_llm_response(prompt: str, language: str = "en") -> str:
+    """Mocks an LLM response based on the prompt and desired language."""
+    print(f"[MOCK LLM] Receiving prompt (lang={language}): {prompt[:100]}...")
+    time.sleep(0.1) # Simulate LLM processing time
 
-class LLMService:
-    def __init__(self):
-        if USE_MOCK_LLM:
-            self.client = MockLLMService()
+    if "What is your name" in prompt:
+        return "I am a helpful AI assistant." if language == "en" else "أنا مساعد ذكاء اصطناعي مفيد."
+
+    mock_response = f"This is a mock response in {language}.\nPrompt received: '{prompt}'\n"
+    if language == "ar":
+        mock_response = f"هذه استجابة وهمية باللغة العربية.\nالطلب المستلم: '{prompt}'\n"
+
+    return mock_response
+
+def get_mock_embedding(text: str) -> List[float]:
+    """Generates a consistent, mock embedding for a given text using hashing."""
+    # Use a simple hashing approach to create a reproducible 'embedding'
+    # This is not a real semantic embedding but serves as a placeholder for structure.
+    hash_val = int(hashlib.sha256(text.encode('utf-8')).hexdigest(), 16)
+    # Create a small, fixed-size vector (e.g., 128 dimensions)
+    embedding_size = 128
+    mock_embedding = [(hash_val % (i + 1)) / (i + 1) for i in range(embedding_size)]
+    return mock_embedding
+
+def get_llm_response_rag(query: str, context: List[str], language: str = "en") -> str:
+    """Mocks an LLM response with retrieved context for RAG, supporting AR/EN."""
+    if not context:
+        # Graceful refusal (out of scope for full implementation, but good to have a basic case)
+        if language == "en":
+            return "I cannot answer this question based on the provided documents. Please try another query."
         else:
-            if not OPENAI_API_KEY:
-                raise ValueError("OPENAI_API_KEY not set in environment variables when USE_MOCK_LLM is false.")
-            self.client = openai.OpenAI(api_key=OPENAI_API_KEY)
+            return "لا يمكنني الإجابة على هذا السؤال بناءً على المستندات المقدمة. يرجى تجربة استعلام آخر."
 
-    def _generate_prompt(self, lang: str, summary_data: dict) -> str:
-        client_name = summary_data.get('client_name', 'Client')
-        currency = summary_data.get('currency', '')
-        grand_total = summary_data.get('grand_total', 0.0)
-        delivery_terms = summary_data.get('delivery_terms', 'Not specified')
-        notes = summary_data.get('notes', 'No specific notes.')
+    context_str = "\n".join(context)
+    
+    prompt_template_en = f"""
+    You are a helpful AI assistant. Answer the user's question only based on the provided context. 
+    If the answer cannot be found in the context, state that you don't have enough information. 
+    Ensure the answer is in English.
 
-        prompt = f"""
-        Generate a {lang} email draft summarizing a quotation.
-        The client is {client_name}.
-        The grand total is {grand_total:.2f} {currency}.
-        Delivery terms: {delivery_terms}.
-        Special notes: {notes}
+    Context:
+    {context_str}
 
-        Please create a professional email draft that includes these details. Make sure to use appropriate language for the chosen language (e.g., formal Arabic).
-        """
-        return prompt
+    Question: {query}
+    Answer:
+    """
 
-    async def generate_email_draft(self, lang: str, summary_data: dict) -> str:
-        prompt = self._generate_prompt(lang, summary_data)
+    prompt_template_ar = f"""
+    أنت مساعد ذكاء اصطناعي مفيد. أجب على سؤال المستخدم بناءً على السياق المقدم فقط. 
+    إذا لم يتم العثور على الإجابة في السياق، فاذكر أنه ليس لديك معلومات كافية. 
+    تأكد من أن الإجابة باللغة العربية.
 
-        if USE_MOCK_LLM:
-            # MockLLMService needs to be called directly
-            response = self.client.generate_response(prompt)
-            return response
-        else:
-            chat_completion = await self.client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant that summarizes quotation details into professional email drafts."},
-                    {"role": "user", "content": prompt}
-                ],
-                model="gpt-3.5-turbo" # Or gpt-4, depending on preference
-            )
-            return chat_completion.choices[0].message.content
+    السياق:
+    {context_str}
+
+    السؤال: {query}
+    الإجابة:
+    """
+
+    if language == "ar":
+        prompt = prompt_template_ar
+    else:
+        prompt = prompt_template_en
+
+    # Simulate a basic RAG response by combining query and context in a simple way
+    # In a real LLM, this prompt would be sent to the model.
+    mock_answer_prefix = "English Answer: " if language == "en" else "الإجابة العربية: "
+
+    # For a mock, just acknowledge the context and try to relate to the query simply
+    if any(q_word.lower() in context_str.lower() for q_word in query.split()):
+        response_content = f"Based on the documents, regarding '{query}', some related information is: '{context_str[:150]}...'"
+        if language == "ar":
+            response_content = f"بناءً على المستندات، بخصوص '{query}'، بعض المعلومات ذات الصلة هي: '{context_str[:150]}...'"
+    else:
+        response_content = f"I found some context, but it's not directly answering '{query}'. Context: '{context_str[:150]}'"
+        if language == "ar":
+            response_content = f"لقد وجدت بعض السياق، لكنه لا يجيب مباشرة على '{query}'. السياق: '{context_str[:150]}'"
+
+    return mock_answer_prefix + response_content

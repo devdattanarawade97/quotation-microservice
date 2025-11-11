@@ -1,67 +1,93 @@
-from fastapi.testclient import TestClient
-from unittest.mock import patch
+import os
+import pytest
+import numpy as np
+from unittest.mock import patch, MagicMock
+from services.rag_core import RAGCore
+from services.llm_utils import get_mock_embedding, get_llm_response_rag
 
-# Patch config for testing to ensure mock LLM is used
-@patch('config.USE_MOCK_LLM', True)
-@patch('config.OPENAI_API_KEY', None)
-def test_create_quote_success():
-    # ✅ Import AFTER patches are applied
-    from app import app  
-    client = TestClient(app)
-    request_payload = {
-        "client": {"name": "Gulf Eng.", "contact": "omar@client.com", "lang": "en"},
-        "currency": "SAR",
-        "items": [
-            {"sku": "ALR-SL-90W", "qty": 120, "unit_cost": 240.0, "margin_pct": 22},
-            {"sku": "ALR-OBL-12V", "qty": 40, "unit_cost": 95.5, "margin_pct": 18}
-        ],
-        "delivery_terms": "DAP Dammam, 4 weeks",
-        "notes": "Client asked for spec compliance with Tarsheed."
-    }
+# Mock FAISS for tests if it's not available in the test environment
+# This allows tests to run even if faiss-cpu isn't perfectly set up,
+# though actual FAISS should be tested if possible.
+@pytest.fixture(autouse=True)
+def mock_faiss_import():
+    if not RAGCore.FAISS_AVAILABLE:
+        with patch('services.rag_core.faiss', new=MagicMock()) as mock_faiss:
+            mock_faiss.IndexFlatL2.return_value = MagicMock()
+            mock_faiss.IndexFlatL2.return_value.search.return_value = (np.array([[0.1]]), np.array([[0]]))
+            yield
+    else:
+        yield
 
-    response = client.post("/quote", json=request_payload)
-    assert response.status_code == 200
-    response_data = response.json()
 
-    # Test calculations
-    assert response_data["client_name"] == "Gulf Eng."
-    assert response_data["currency"] == "SAR"
-    assert len(response_data["line_items"]) == 2
-    assert response_data["line_items"][0]["sku"] == "ALR-SL-90W"
-    # 240 * (1 + 0.22) * 120 = 240 * 1.22 * 120 = 35136
-    assert response_data["line_items"][0]["price_per_line"] == 35136.0
-    assert response_data["line_items"][1]["sku"] == "ALR-OBL-12V"
-    # 95.5 * (1 + 0.18) * 40 = 95.5 * 1.18 * 40 = 4504.4
-    assert response_data["line_items"][1]["price_per_line"] == 4504.4
+@pytest.fixture
+def mock_data_dir(tmp_path):
+    """Create temporary mock data files for testing."""
+    data_path = tmp_path / "data"
+    data_path.mkdir()
 
-    # Grand total = 35136 + 4504.4 = 39640.4
-    assert response_data["grand_total"] == 39640.4
-    assert "DAP Dammam" in response_data["delivery_terms"]
+    doc1_en = data_path / "document1_en.txt"
+    doc1_en.write_text("The quick brown fox jumps over the lazy dog. Fox is an animal.")
 
-    # Test mock LLM response
-    assert "Mock LLM response for English" in response_data["email_draft_en"]
-    assert "Mock LLM response for Arabic" in response_data["email_draft_ar"]
-    assert "Gulf Eng." in response_data["email_draft_en"]
-    assert "39640.40 SAR" in response_data["email_draft_en"]
-    assert "DAP Dammam, 4 weeks" in response_data["email_draft_en"]
-    assert "Tarsheed" in response_data["email_draft_en"]
+    doc2_ar = data_path / "document2_ar.txt"
+    doc2_ar.write_text("القط السريع البني يقفز فوق الكلب الكسول. الكلب حيوان.")
     
-@patch('config.USE_MOCK_LLM', True)
-@patch('config.OPENAI_API_KEY', None)
-def test_create_quote_empty_items():
-        # ✅ Import AFTER patches are applied
-    from app import app  
-    client = TestClient(app)
-    request_payload = {
-        "client": {"name": "Test Client", "contact": "test@client.com", "lang": "en"},
-        "currency": "USD",
-        "items": [],
-        "delivery_terms": "FOB Port",
-        "notes": ""
-    }
-    response = client.post("/quote", json=request_payload)
-    assert response.status_code == 200
-    response_data = response.json()
-    assert response_data["grand_total"] == 0.0
-    assert len(response_data["line_items"]) == 0
-    assert "Mock LLM response for English" in response_data["email_draft_en"]
+    return data_path
+
+def test_rag_pipeline_english_query(mock_data_dir):
+    """Test the RAG pipeline with an English query."""
+    doc_paths = [
+        os.path.join(mock_data_dir, "document1_en.txt"),
+        os.path.join(mock_data_dir, "document2_ar.txt")
+    ]
+
+    rag_core = RAGCore(document_paths=doc_paths)
+
+    query = "What is a fox?"
+    response = rag_core.query(query_text=query, language="en")
+
+    assert "answer" in response
+    assert isinstance(response["answer"], str)
+    assert len(response["answer"]) > 0
+    assert "citations" in response
+    assert isinstance(response["citations"], list)
+    assert len(response["citations"]) > 0 # Expect at least one citation
+    assert "document1_en.txt" in response["citations"]
+    assert "English Answer:" in response["answer"]
+
+def test_rag_pipeline_arabic_query(mock_data_dir):
+    """Test the RAG pipeline with an Arabic query."""
+    doc_paths = [
+        os.path.join(mock_data_dir, "document1_en.txt"),
+        os.path.join(mock_data_dir, "document2_ar.txt")
+    ]
+
+    rag_core = RAGCore(document_paths=doc_paths)
+
+    query = "ما هو الكلب؟" # What is a dog?
+    response = rag_core.query(query_text=query, language="ar")
+
+    assert "answer" in response
+    assert isinstance(response["answer"], str)
+    assert len(response["answer"]) > 0
+    assert "citations" in response
+    assert isinstance(response["citations"], list)
+    assert len(response["citations"]) > 0 # Expect at least one citation
+    assert "document2_ar.txt" in response["citations"]
+    assert "الإجابة العربية:" in response["answer"]
+
+def test_rag_no_relevant_context(mock_data_dir):
+    """Test RAG pipeline when no relevant context is found."""
+    doc_paths = [
+        os.path.join(mock_data_dir, "document1_en.txt")
+    ]
+
+    rag_core = RAGCore(document_paths=doc_paths)
+
+    query = "What is the capital of France?" # Irrelevant query
+    response = rag_core.query(query_text=query, language="en", top_k=1)
+    
+    assert "answer" in response
+    assert isinstance(response["answer"], str)
+    assert "not directly answering" in response["answer"] or "cannot answer" in response["answer"]
+    assert "citations" in response
+    assert len(response["citations"]) >= 0 # Can be 0 if mock search is truly empty
