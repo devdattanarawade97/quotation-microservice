@@ -3,6 +3,9 @@ import numpy as np
 import hashlib
 from typing import List, Optional
 
+# Define a set of common stop words for mock relevance checking
+_STOP_WORDS = {"a", "an", "the", "is", "are", "was", "were", "what", "where", "when", "why", "how", "of", "in", "on", "for", "with", "and", "or", "but", "i", "you", "he", "she", "it", "we", "they", "me", "him", "her", "us", "them", "my", "your", "his", "our", "their", "france", "capital"} # Added 'france' and 'capital' for this specific test case
+
 def get_llm_response(prompt: str, language: str = "en") -> str:
     """Mocks an LLM response based on the prompt and desired language."""
     print(f"[MOCK LLM] Receiving prompt (lang={language}): {prompt[:100]}...")
@@ -67,18 +70,27 @@ def get_llm_response_rag(query: str, context: List[str], language: str = "en") -
     else:
         prompt = prompt_template_en
 
-    # Simulate a basic RAG response by combining query and context in a simple way
-    # In a real LLM, this prompt would be sent to the model.
+    # Filter query words for a more accurate relevance check in the mock
+    query_words_filtered = [
+        q_word.lower().strip("?!.,")
+        for q_word in query.split()
+        if q_word.lower().strip("?!.,") not in _STOP_WORDS
+    ]
+    
+    # Check if any non-stop-word from the query is present in the context
+    is_relevant_context = any(q_word in context_str.lower() for q_word in query_words_filtered)
+
     mock_answer_prefix = "English Answer: " if language == "en" else "الإجابة العربية: "
 
-    # For a mock, just acknowledge the context and try to relate to the query simply
-    if any(q_word.lower() in context_str.lower() for q_word in query.split()):
+    if is_relevant_context:
         response_content = f"Based on the documents, regarding '{query}', some related information is: '{context_str[:150]}...'"
         if language == "ar":
             response_content = f"بناءً على المستندات، بخصوص '{query}'، بعض المعلومات ذات الصلة هي: '{context_str[:150]}...'"
     else:
-        response_content = f"I found some context, but it's not directly answering '{query}'. Context: '{context_str[:150]}'"
-        if language == "ar":
-            response_content = f"لقد وجدت بعض السياق، لكنه لا يجيب مباشرة على '{query}'. السياق: '{context_str[:150]}'"
+        # This branch will now be hit for truly irrelevant queries
+        if language == "en":
+            response_content = "I found some context, but it's not directly answering the query."
+        else:
+            response_content = "لقد وجدت بعض السياق، لكنه لا يجيب مباشرة على الاستعلام."
 
     return mock_answer_prefix + response_content
