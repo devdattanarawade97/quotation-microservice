@@ -2,8 +2,10 @@ import os
 import pytest
 import numpy as np
 from unittest.mock import patch, MagicMock
-from services.rag_core import RAGCore, FAISS_AVAILABLE
-from services.llm_utils import get_mock_embedding, get_llm_response_rag
+# FIX: Corrected import path to include 'src' package
+from src.services.rag_core import RAGCore, FAISS_AVAILABLE
+# FIX: Corrected import path to include 'src' package
+from src.services.llm_utils import get_mock_embedding, get_llm_response_rag
 
 # Mock FAISS for tests if it's not available in the test environment
 # This allows tests to run even if faiss-cpu isn't perfectly set up,
