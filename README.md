@@ -248,3 +248,4 @@ The `src/config.py` file is central to configuring the project. It allows you to
 
 $env:PYTHONPATH = (Get-Location).Path
 pytest ./tests/test_task_1.py -v -s
+pytest ./tests/test_app.py -v -s
