@@ -19,6 +19,21 @@ email_sender_service = MockEmailSenderService() if settings.MOCK_EMAIL_SENDER_EN
 alert_sender_service = MockAlertSenderService() if settings.MOCK_ALERT_SENDER_ENABLED else None # Placeholder for real Alert Sender
 
 def process_rfq_email(raw_email_content: bytes):
+    """
+    Processes an incoming Request for Quotation (RFQ) email.
+
+    This function orchestrates a series of steps:
+    1. Parses the raw email content to extract key information.
+    2. Uses an LLM (or mock) to extract structured fields from the email subject and body.
+    3. Appends the extracted data to a Google Sheet (or mock).
+    4. Creates an opportunity in Salesforce CRM (or mock).
+    5. Archives email attachments to Google Drive (or mock).
+    6. Sends an automated reply to the client (or mock).
+    7. Posts an internal alert (e.g., to Slack/Teams) (or mock).
+
+    Args:
+        raw_email_content (bytes): The raw byte content of the RFQ email.
+    """
     print("\n--- Processing Incoming RFQ Email ---")
 
     # 1. Parse Email

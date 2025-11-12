@@ -4,11 +4,18 @@ from services.rag_core import RAGCore
 from services.llm_utils import get_llm_response # For general chat, if needed
 
 def main():
+    """
+    Main function to run the RAG Knowledge Base CLI application.
+
+    This function sets up the RAG pipeline, loads documents, and enters
+    an interactive loop to allow users to ask questions and receive
+    answers augmented with retrieved context from the documents.
+    """
     print("Starting RAG Knowledge Base CLI...")
 
     # Define document paths
     script_dir = os.path.dirname(__file__)
-    data_dir = os.path.join(script_dir, "data")
+    data_dir = os.path.join(script_dir, "../../data") # Adjusted path to correctly reach 'data' directory
     document_paths = [
         os.path.join(data_dir, "document1_en.txt"),
         os.path.join(data_dir, "document2_ar.txt")
@@ -63,3 +70,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
