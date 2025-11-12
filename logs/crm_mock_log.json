@@ -43,5 +43,14 @@
         "Amount": null,
         "Description": "RFQ for 120 pcs streetlight model ALR-SL-90W. Needed in Dammam within 4 weeks. Contact: omar@client.com",
         "CreatedDate": "2025-11-12T15:18:26.480869"
+    },
+    {
+        "Id": "006xxxxxxxxxxxxxxx6",
+        "Name": "RFQ: streetlight model ALR-SL-90W from Eng. Omar",
+        "StageName": "Qualification",
+        "CloseDate": "2025-12-10",
+        "Amount": null,
+        "Description": "RFQ for 120 pcs streetlight model ALR-SL-90W. Needed in Dammam within 4 weeks. Contact: omar@client.com",
+        "CreatedDate": "2025-11-12T20:27:55.481452"
     }
 ]
