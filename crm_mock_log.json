@@ -1,11 +1,11 @@
 [
     {
         "Id": "006xxxxxxxxxxxxxxx1",
-        "Name": "RFQ:  from N/A",
+        "Name": "RFQ: streetlight model ALR-SL-90W from Eng. Omar",
         "StageName": "Qualification",
-        "CloseDate": "2025-12-09",
+        "CloseDate": "2025-12-10",
         "Amount": null,
-        "Description": "RFQ for 120 pcs . Needed in Dammam within 4 weeks. Contact: omar@client.com",
-        "CreatedDate": "2025-11-11T19:09:31.765732"
+        "Description": "RFQ for 120 pcs streetlight model ALR-SL-90W. Needed in Dammam within 4 weeks. Contact: omar@client.com",
+        "CreatedDate": "2025-11-12T14:52:33.973682"
     }
 ]

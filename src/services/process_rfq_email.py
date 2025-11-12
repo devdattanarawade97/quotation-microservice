@@ -19,8 +19,23 @@ email_sender_service = MockEmailSenderService() if settings.MOCK_EMAIL_SENDER_EN
 alert_sender_service = MockAlertSenderService() if settings.MOCK_ALERT_SENDER_ENABLED else None # Placeholder for real Alert Sender
 
 def process_rfq_email(raw_email_content: bytes):
+    """
+    Processes an incoming Request for Quotation (RFQ) email.
+
+    This function orchestrates a series of steps:
+    1. Parses the raw email content to extract key information.
+    2. Uses an LLM (or mock) to extract structured fields from the email subject and body.
+    3. Appends the extracted data to a Google Sheet (or mock).
+    4. Creates an opportunity in Salesforce CRM (or mock).
+    5. Archives email attachments to Google Drive (or mock).
+    6. Sends an automated reply to the client (or mock).
+    7. Posts an internal alert (e.g., to Slack/Teams) (or mock).
+
+    Args:
+        raw_email_content (bytes): The raw byte content of the RFQ email.
+    """
     print("\n--- Processing Incoming RFQ Email ---")
-    
+
     # 1. Parse Email
     parsed_email = email_parser.parse_email(raw_email_content)
     subject = parsed_email['subject']
@@ -65,9 +80,9 @@ def process_rfq_email(raw_email_content: bytes):
     if email_sender_service and extracted_fields.get('contact_email'):
         reply_subject = f"Re: {subject}"
         reply_body_ar = """مرحباً [اسم العميل],\n\nشكراً لاستفسارك بخصوص [المنتج]. لقد استلمنا طلبك وسنتواصل معك قريباً.\n\nمع خالص التقدير،\nفريق العروف\n""".replace('[اسم العميل]', extracted_fields.get('contact_person', 'عميلنا العزيز')).replace('[المنتج]', extracted_fields.get('product', 'طلبك'))
-        
+
         reply_body_en = f"""Hello {extracted_fields.get('contact_person', 'Valued Client')},\n\nThank you for your inquiry regarding {extracted_fields.get('product', 'your request')}. We have received your request and will get back to you shortly.\n\nBest regards,\nAlrouf Team\n"""
-        
+
         # For simplicity, sending English auto-reply for now
         email_sender_service.send_email(extracted_fields['contact_email'], reply_subject, reply_body_en)
 

@@ -1,1 +1,1 @@
-[2025-11-11T19:09:31.774853] [MOCK ALERT - #rfq_alerts] New RFQ received: 'RFQ — Streetlight Poles' from omar@client.com. Fields extracted: , 120 pcs.
+[2025-11-12T14:52:34.006528] [MOCK ALERT - #rfq_alerts] New RFQ received: 'RFQ — Streetlight Poles' from omar@client.com. Fields extracted: streetlight model ALR-SL-90W, 120 pcs.

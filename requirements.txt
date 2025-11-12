@@ -1,1 +1,9 @@
+faiss-cpu
+langchain-text-splitters
+numpy
+fastapi
+uvicorn
+pydantic
+openai
+pytest
 python-dotenv

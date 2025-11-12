@@ -1,13 +1,13 @@
 [
     {
-        "Timestamp": "2025-11-11T19:09:31.762173",
+        "Timestamp": "2025-11-12T14:52:33.966824",
         "Subject": "RFQ \u2014 Streetlight Poles",
         "Sender": "omar@client.com",
-        "product": "",
+        "product": "streetlight model ALR-SL-90W",
         "quantity": "120 pcs",
         "location": "Dammam",
         "delivery_time": "4 weeks",
-        "contact_person": "N/A",
+        "contact_person": "Eng. Omar",
         "contact_email": "omar@client.com",
         "contact_phone": "N/A"
     }
