@@ -1,3 +1,10 @@
+"""
+This module implements a FastAPI microservice for generating quotations and email drafts.
+
+It handles client requests for quotations, calculates line item prices including margins,
+and uses an LLM service to generate professional email drafts in English and Arabic.
+Pydantic models are used for request validation and response serialization.
+"""
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 # FIX: Added Tuple to the import from typing
@@ -8,43 +15,59 @@ import asyncio
 
 # --- Pydantic Models for Request and Response ---
 class ClientInfo(BaseModel):
-    name: str
-    contact: str
-    lang: str = "en" # Default language for client communication
+    """
+    Pydantic model for client information.
+    """
+    name: str = Field(..., description="The name of the client company or contact person.")
+    contact: str = Field(..., description="The contact email address or phone number of the client.")
+    lang: str = Field("en", description="The preferred language for client communication (e.g., 'en', 'ar'). Defaults to 'en'.")
 
 class LineItem(BaseModel):
-    sku: str
-    qty: int = Field(..., gt=0) # Quantity must be greater than 0
-    unit_cost: float = Field(..., gt=0) # Unit cost must be greater than 0
-    margin_pct: float = Field(default=20.0, ge=0, le=100) # Margin percentage between 0 and 100
+    """
+    Pydantic model for a single line item in a quotation request.
+    """
+    sku: str = Field(..., description="The Stock Keeping Unit (SKU) or product identifier.")
+    qty: int = Field(..., gt=0, description="The quantity of the item requested. Must be greater than 0.")
+    unit_cost: float = Field(..., gt=0, description="The base cost of a single unit of the item. Must be greater than 0.")
+    margin_pct: float = Field(default=20.0, ge=0, le=100, description="The desired profit margin percentage for the item (0-100). Defaults to 20.0.")
 
 class QuoteRequest(BaseModel):
-    client: ClientInfo
-    currency: str = "SAR"
-    items: List[LineItem] = Field(..., min_length=0) # Allow empty items list
-    delivery_terms: Optional[str] = None
-    notes: Optional[str] = None
+    """
+    Pydantic model for the incoming quotation request payload.
+    """
+    client: ClientInfo = Field(..., description="Information about the client requesting the quote.")
+    currency: str = Field("SAR", description="The currency for the quotation (e.g., 'SAR', 'USD'). Defaults to 'SAR'.")
+    items: List[LineItem] = Field(..., min_length=0, description="A list of line items included in the quotation. Can be empty.")
+    delivery_terms: Optional[str] = Field(None, description="Optional delivery terms for the quotation (e.g., 'DAP Dammam, 4 weeks').")
+    notes: Optional[str] = Field(None, description="Optional special notes or client requirements for the quotation.")
 
 class QuoteLineItemResponse(BaseModel):
-    sku: str
-    qty: int
-    unit_cost: float
-    margin_pct: float
-    price_per_unit: float
-    price_per_line: float
+    """
+    Pydantic model for a single line item in the quotation response,
+    including calculated prices.
+    """
+    sku: str = Field(..., description="The Stock Keeping Unit (SKU) or product identifier.")
+    qty: int = Field(..., description="The quantity of the item.")
+    unit_cost: float = Field(..., description="The base cost of a single unit.")
+    margin_pct: float = Field(..., description="The profit margin percentage applied.")
+    price_per_unit: float = Field(..., description="The final price per unit after applying margin.")
+    price_per_line: float = Field(..., description="The total price for this line item (price_per_unit * qty).")
 
 class QuoteResponse(BaseModel):
-    client_name: str
-    client_contact: str
-    client_lang: str
-    currency: str
-    line_items: List[QuoteLineItemResponse]
-    subtotal: float
-    grand_total: float
-    delivery_terms: Optional[str]
-    notes: Optional[str]
-    email_draft_en: Optional[str] # Field for English email draft
-    email_draft_ar: Optional[str] # Field for Arabic email draft
+    """
+    Pydantic model for the comprehensive quotation response returned by the API.
+    """
+    client_name: str = Field(..., description="The name of the client.")
+    client_contact: str = Field(..., description="The contact information for the client.")
+    client_lang: str = Field(..., description="The preferred language for the client.")
+    currency: str = Field(..., description="The currency of the quotation.")
+    line_items: List[QuoteLineItemResponse] = Field(..., description="A list of processed line items with calculated prices.")
+    subtotal: float = Field(..., description="The sum of all line item prices before any potential overall discounts/taxes.")
+    grand_total: float = Field(..., description="The final total amount of the quotation.")
+    delivery_terms: Optional[str] = Field(None, description="The delivery terms specified in the request.")
+    notes: Optional[str] = Field(None, description="Any special notes included in the request.")
+    email_draft_en: Optional[str] = Field(None, description="The generated English email draft summarizing the quotation.")
+    email_draft_ar: Optional[str] = Field(None, description="The generated Arabic email draft summarizing the quotation.")
 
 # --- FastAPI App Initialization ---
 app = FastAPI(
@@ -58,7 +81,17 @@ llm_service = LLMService()
 
 # --- Utility Functions ---
 def calculate_line_item_prices(item: LineItem) -> Tuple[float, float]:
-    """Calculates price per unit and price per line with margin."""
+    """
+    Calculates the final price per unit and total price per line item, including the specified margin.
+
+    Args:
+        item (LineItem): A Pydantic LineItem object containing SKU, quantity, unit cost, and margin percentage.
+
+    Returns:
+        Tuple[float, float]: A tuple containing two floats:
+                             - The calculated price per unit (after margin).
+                             - The calculated total price for the line item (price_per_unit * qty).
+    """
     price_per_unit = item.unit_cost * (1 + item.margin_pct / 100)
     price_per_line = price_per_unit * item.qty
     return round(price_per_unit, 2), round(price_per_line, 2)
@@ -67,8 +100,23 @@ def calculate_line_item_prices(item: LineItem) -> Tuple[float, float]:
 @app.post("/quote", response_model=QuoteResponse)
 async def create_quote(request: QuoteRequest):
     """
-    Generates a detailed quotation including line item calculations and
-    an LLM-powered email draft for the client.
+    Generates a detailed quotation and an LLM-powered email draft for the client.
+
+    This endpoint accepts a `QuoteRequest` payload, calculates the prices for
+    each line item based on unit cost and margin, sums them up for a grand total,
+    and then uses an LLM service to generate a summary email draft for the client
+    in both English and Arabic.
+
+    Args:
+        request (QuoteRequest): The incoming request containing client info, currency,
+                                line items, delivery terms, and notes.
+
+    Returns:
+        QuoteResponse: A comprehensive response object containing all calculated
+                       quotation details and the generated email drafts.
+
+    Raises:
+        HTTPException: If any required data is missing or invalid (handled by Pydantic).
     """
     if not request.items:
         # Handle cases with no items, setting totals to 0 and providing generic email drafts
