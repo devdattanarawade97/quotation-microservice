@@ -1,8 +1,8 @@
 
-# Repo Pilot Project Documentation
+# Quotation Microservice
 
 ## Project Overview
-Welcome to the Repo Pilot project documentation! This system is designed as a sophisticated automation hub, demonstrating capabilities across multiple critical business functions. It handles everything from automating Request for Quotation (RFQ) processing, generating dynamic quotations, to maintaining a robust Retrieval Augmented Generation (RAG) knowledge base for both English and Arabic content. The project leverages Python, FastAPI, and integrates with Large Language Models (LLMs) for intelligent data processing and response generation, utilizing mock services for development and testing flexibility.
+Welcome to the Quotation Microservice documentation! This system is designed as a sophisticated automation hub, demonstrating capabilities across multiple critical business functions. It handles everything from automating Request for Quotation (RFQ) processing, generating dynamic quotations, to maintaining a robust Retrieval Augmented Generation (RAG) knowledge base for both English and Arabic content. The project leverages Python, FastAPI, and integrates with Large Language Models (LLMs) for intelligent data processing and response generation, utilizing mock services for development and testing flexibility.
 
 ## Directory Structure
 Our project follows a standard and professional directory structure to enhance maintainability, scalability, and clarity.
