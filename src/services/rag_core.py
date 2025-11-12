@@ -13,7 +13,8 @@ except ImportError:
     FAISS_AVAILABLE = False
     print("Warning: FAISS not installed. Using mock vector search. Please install faiss-cpu or faiss-gpu.")
 
-from services.llm_utils import get_mock_embedding, get_llm_response_rag
+# FIX: Changed to a relative import to correctly reference llm_utils within the same 'services' package
+from .llm_utils import get_mock_embedding, get_llm_response_rag
 
 class RAGCore:
     """
