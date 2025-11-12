@@ -3,7 +3,16 @@ import re
 from typing import Dict, Any
 
 class MockLLMService:
+    """
+    A mock service simulating a Large Language Model (LLM) for text extraction and generation.
+
+    This service provides predefined or simple regex-based responses for extracting fields
+    from text and generating mock email drafts.
+    """
     def __init__(self):
+        """
+        Initializes the MockLLMService with predefined mock responses.
+        """
         self.mock_responses = {
             "RFQ — Streetlight Poles": {
                 "product": "streetlight model ALR-SL-90W",
@@ -17,26 +26,41 @@ class MockLLMService:
         }
     
     def extract_fields(self, subject: str, body: str) -> Dict[str, Any]:
+        """
+        Simulates an LLM extracting key fields from an email subject and body.
+
+        For specific subjects (e.g., "RFQ — Streetlight Poles"), it uses regex
+        to parse the body and return structured data. Otherwise, it returns
+        default "N/A" values.
+
+        Args:
+            subject (str): The subject line of the email.
+            body (str): The body content of the email.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing extracted fields like product,
+                            quantity, location, contact info, etc.
+        """
         print(f"[MOCK LLM] Extracting fields for subject: '{subject}'")
-        # Use a simple regex or direct lookup for mock extraction based on example email
         if "RFQ — Streetlight Poles" in subject:
-            # Example extraction logic based on the provided email sample
-            product_match = re.search(r'quote (\d+ pcs .*?)', body, re.IGNORECASE)
+            # Updated regex patterns for more accurate extraction
+            product_match = re.search(r'quote \d+ pcs (.*?)(?:\. Needed in|\n)', body, re.IGNORECASE)
             quantity_match = re.search(r'quote (\d+ pcs)', body, re.IGNORECASE)
             location_match = re.search(r'Needed in (\w+) within', body, re.IGNORECASE)
             delivery_match = re.search(r'within (\d+ weeks)', body, re.IGNORECASE)
-            contact_name_match = re.search(r'Regards, (.*?)(?:, \+9665|$) ', body)
+            # Improved regex for contact person, looking before email/phone
+            contact_name_match = re.search(r'Regards,\s*(.*?)(?:,\s*\+9665|\s*,\s*\S+@\S+\.\S+|\n|$)', body, re.IGNORECASE)
             contact_email_match = re.search(r'(\S+@\S+\.\S+)', body)
-            contact_phone_match = re.search(r'\+9665(\d+)', body)
+            contact_phone_match = re.search(r'\+9665(\d{8})', body) # Assuming 8 digits after +9665
 
             return {
-                "product": product_match.group(1).replace(quantity_match.group(1), '').strip() if product_match and quantity_match else "N/A",
+                "product": product_match.group(1).strip() if product_match else "N/A",
                 "quantity": quantity_match.group(1) if quantity_match else "N/A",
                 "location": location_match.group(1) if location_match else "N/A",
                 "delivery_time": delivery_match.group(1) if delivery_match else "N/A",
                 "contact_person": contact_name_match.group(1).strip() if contact_name_match else "N/A",
                 "contact_email": contact_email_match.group(1) if contact_email_match else "N/A",
-                "contact_phone": f"({contact_phone_match.group(0)})" if contact_phone_match else "N/A" # Reconstruct full number for clarity
+                "contact_phone": contact_phone_match.group(0) if contact_phone_match else "N/A" # Keep full matched phone for clarity
             }
         
         print("[MOCK LLM] No specific mock response found for this subject. Returning empty dict.")
@@ -54,6 +78,15 @@ class MockLLMService:
         """
         Generates a mock response based on the prompt, simulating an LLM email draft.
         This version always generates a single, combined bilingual (English and Arabic) draft.
+
+        It parses key information (client name, grand total, delivery terms, notes)
+        from the prompt to construct a semi-realistic, formatted email draft.
+
+        Args:
+            prompt (str): The prompt text used to guide the LLM's response generation.
+
+        Returns:
+            str: A combined bilingual (English and Arabic) mock email draft.
         """
         print(f"[MOCK LLM] Generating mock bilingual response for prompt:\n---\n{prompt}\n---")
 

@@ -246,3 +246,5 @@ The `src/config.py` file is central to configuring the project. It allows you to
 *   Set API keys for actual external services (e.g., `OPENAI_API_KEY`) when running in a production-like environment.
 
 
+$env:PYTHONPATH = (Get-Location).Path
+pytest ./tests/test_task_1.py -v -s

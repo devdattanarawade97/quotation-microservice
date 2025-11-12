@@ -22,5 +22,17 @@
         "contact_person": "N/A",
         "contact_email": "omar@client.com",
         "contact_phone": "N/A"
+    },
+    {
+        "Timestamp": "2025-11-12T14:56:21.617986",
+        "Subject": "RFQ \u2014 Streetlight Poles",
+        "Sender": "omar@client.com",
+        "product": "streetlight model ALR-SL-90W",
+        "quantity": "120 pcs",
+        "location": "Dammam",
+        "delivery_time": "4 weeks",
+        "contact_person": "Eng. Omar",
+        "contact_email": "omar@client.com",
+        "contact_phone": "N/A"
     }
 ]
