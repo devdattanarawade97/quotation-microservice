@@ -270,7 +270,7 @@ pytest ./tests/test_task_1.py -v -s
 These tests cover the FastAPI quotation microservice endpoints, ensuring correct quote calculation, handling of different line item scenarios, and proper LLM email draft generation.
 
 ```bash
-pytest ./tests/test_app.py -v -s
+pytest ./tests/test_task_2.py -v -s
 ```
 
 ### Test Task 3: RAG Knowledge Base
