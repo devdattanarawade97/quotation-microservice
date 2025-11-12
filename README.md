@@ -323,3 +323,7 @@ You should see output from Uvicorn indicating that it's starting up.
 
 Then, you can try accessing your API, for example, by making a request to `http://localhost:8000/docs` in your web browser to see the FastAPI interactive documentation.
 ```
+
+Project Info Video : https://drive.google.com/file/d/11omBxY5G4DHZng048d_J2pue0Sy4-eJs/view?usp=sharing
+
+Project Creation(using AI tool) Demo : https://drive.google.com/file/d/1kn7kwRM16sObDN2kYpz4lF2gZsWsmjfq/view?usp=sharing
