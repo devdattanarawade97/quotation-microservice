@@ -220,32 +220,106 @@ In essence, `src/app.py` handles the initial request, calculates the numerical a
 
 ## Getting Started
 
-To get started with the Repo Pilot project:
+To get started with the Quotation Microservice project:
+
+# Quotation Microservice
+
+This repository contains a Python-based microservice designed to generate quotations and automate various related tasks, including email parsing, LLM-powered field extraction, CRM integration, and RAG-based knowledge retrieval.
+
+## Setup
 
 1.  **Clone the repository:**
     ```bash
     git clone <repository-url>
-    cd repo-pilot
-    ```
-2.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-3.  **Configure:** Review `src/config.py` to set up API keys or enable/disable mock services as needed.
-4.  **Run the application:**
-    ```bash
-    python src/app.py
-    ```
-    (Note: For a FastAPI application, you might use `uvicorn src.app:app --reload` if configured as such.)
-5.  **Explore endpoints:** Use tools like `curl`, Postman, or your browser to interact with the FastAPI endpoints (`/quote`, etc.) or run the `if __name__ == "__main__":` block in `src/app.py` for RFQ automation demonstration.
+    cd Quotation Microservice
 
-## Configuration
+Before running the application or tests, it's crucial to correctly configure your Python environment, especially the `PYTHONPATH`, so that Python can find modules within the `src` directory.
 
-The `src/config.py` file is central to configuring the project. It allows you to:
-*   Enable/disable mock services (e.g., `MOCK_LLM_ENABLED`, `MOCK_GOOGLE_SHEETS_ENABLED`) for testing and development without relying on external APIs.
-*   Set API keys for actual external services (e.g., `OPENAI_API_KEY`) when running in a production-like environment.
+### Environment Setup (Windows PowerShell)
 
+Open PowerShell in the root directory of the project and run:
 
+```powershell
 $env:PYTHONPATH = (Get-Location).Path
+```
+*(For Linux/macOS, use: `export PYTHONPATH=$(pwd)`)`*
+
+### Install Dependencies
+
+Ensure you have all necessary Python packages installed. From the project root, run:
+
+```bash
+pip install -r requirements.txt
+```
+
+
+## Running Tests
+
+The project includes unit and integration tests for different functionalities.
+
+### Test Task 1: RFQ to CRM Automation
+
+This test verifies the end-to-end RFQ email processing workflow using mock services, including email parsing, field extraction, Google Sheets integration, Salesforce opportunity creation, Google Drive archiving, auto-reply, and internal alerting.
+
+```bash
 pytest ./tests/test_task_1.py -v -s
+```
+
+### Test Task 2: Quotation Microservice (FastAPI)
+
+These tests cover the FastAPI quotation microservice endpoints, ensuring correct quote calculation, handling of different line item scenarios, and proper LLM email draft generation.
+
+```bash
 pytest ./tests/test_app.py -v -s
+```
+
+### Test Task 3: RAG Knowledge Base
+
+This test validates the Retrieval Augmented Generation (RAG) pipeline, including document loading, chunking, embedding, FAISS indexing, and querying with both English and Arabic language support for context retrieval.
+
+```bash
+pytest ./tests/test_task_3.py -v -s
+```
+
+## Running with Docker
+
+You can containerize and run the FastAPI quotation microservice using Docker.
+
+### Build the Docker Image
+
+Navigate to the root directory of your project (where the `Dockerfile` is located) in your terminal and run:
+
+```bash
+docker build -t quotation-microservice .
+```
+This command builds a Docker image named `quotation-microservice` using the current directory's `Dockerfile`.
+
+### Run the Docker Container
+
+After the image is built, you can run your application in a Docker container. You'll likely need to pass any environment variables that your application (e.g., `OPENAI_API_KEY`, `USE_MOCK_LLM`) depends on.
+
+To run with the mock LLM enabled (as your tests suggest), you might use this command:
+
+```bash
+docker run -d -p 8000:8000 \
+  -e USE_MOCK_LLM="true" \
+  -e OPENAI_API_KEY="sk-mock-key-if-needed" \
+  --name quotation-server quotation-microservice
+```
+*   `-d`: Runs the container in detached mode (in the background).
+*   `-p 8000:8000`: Maps port 8000 on your host machine to port 8000 inside the container.
+*   `-e USE_MOCK_LLM="true"`: Passes the `USE_MOCK_LLM` environment variable to the container. **Adjust other `-e` flags for any real API keys or specific configuration you need.**
+*   `--name quotation-server`: Gives your container a memorable name.
+*   `quotation-microservice`: The name of the Docker image you just built.
+
+### Verify the Server is Running
+
+You can check the container logs to ensure the Uvicorn server started successfully:
+
+```bash
+docker logs quotation-server
+```
+You should see output from Uvicorn indicating that it's starting up.
+
+Then, you can try accessing your API, for example, by making a request to `http://localhost:8000/docs` in your web browser to see the FastAPI interactive documentation.
+```
