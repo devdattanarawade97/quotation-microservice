@@ -49,3 +49,54 @@ class MockLLMService:
             "contact_email": "N/A",
             "contact_phone": "N/A"
         }
+
+    def generate_response(self, prompt: str) -> str:
+        """
+        Generates a mock response based on the prompt, simulating an LLM email draft.
+        This version always generates a single, combined bilingual (English and Arabic) draft.
+        """
+        print(f"[MOCK LLM] Generating mock bilingual response for prompt:\n---\n{prompt}\n---")
+
+        # Extract summary data from prompt for more realistic mock
+        client_name_match = re.search(r'The client is (.*?)\.', prompt)
+        client_name = client_name_match.group(1) if client_name_match else "Client"
+
+        grand_total_match = re.search(r'The grand total is (\d+\.\d{2} \w+)\.', prompt)
+        grand_total = grand_total_match.group(1) if grand_total_match else "0.00 CUR"
+
+        delivery_terms_match = re.search(r'Delivery terms: (.*?)\.', prompt)
+        delivery_terms = delivery_terms_match.group(1) if delivery_terms_match else "Not specified"
+
+        notes_match = re.search(r'Special notes: (.*?)(?:\n|$)', prompt, re.DOTALL)
+        notes = notes_match.group(1).strip() if notes_match else "No specific notes."
+
+        # Construct the mock response with both English and Arabic content
+        english_part = (
+            f"Mock LLM response for English:\n\n"
+            f"Dear {client_name},\n\n"
+            f"Please find below the summary of your quotation:\n"
+            f"Grand Total: {grand_total}\n"
+            f"Delivery Terms: {delivery_terms}\n"
+            f"Notes: {notes}\n\n"
+            f"We look forward to your business.\n"
+            f"Sincerely,\n"
+            f"Quotation Team"
+        )
+
+        arabic_part = (
+            f"استجابة نموذج اللغة الكبيرة الوهمية للغة العربية:\n\n"
+            f"عزيزي {client_name},\n\n"
+            f"تجدون أدناه ملخص عرض الأسعار الخاص بكم:\n"
+            f"الإجمالي الكلي: {grand_total}\n"
+            f"شروط التسليم: {delivery_terms}\n"
+            f"ملاحظات خاصة: {notes}\n\n"
+            f"نتطلع إلى عملكم معنا.\n"
+            f"مع خالص التقدير،\n"
+            f"فريق عروض الأسعار"
+        )
+
+        # Combine both into a single bilingual draft with a clear separator
+        bilingual_draft = f"{english_part}\n\n---\n\n{arabic_part}"
+
+        return bilingual_draft
+

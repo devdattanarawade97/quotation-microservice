@@ -1,1 +1,2 @@
-[2025-11-11T19:09:31.774853] [MOCK ALERT - #rfq_alerts] New RFQ received: 'RFQ — Streetlight Poles' from omar@client.com. Fields extracted: , 120 pcs.
+[2025-11-11T19:09:31.774853] [MOCK ALERT - #rfq_alerts] New RFQ received: 'RFQ ï¿½ Streetlight Poles' from omar@client.com. Fields extracted: , 120 pcs.
+[2025-11-12T09:28:23.550223] [MOCK ALERT - #rfq_alerts] New RFQ received: 'RFQ ï¿½ Streetlight Poles' from omar@client.com. Fields extracted: , 120 pcs.
