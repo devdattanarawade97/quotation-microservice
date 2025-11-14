@@ -1,4 +1,3 @@
-
 # Quotation Microservice
 
 ## Project Overview
@@ -29,8 +28,7 @@ Our project follows a standard and professional directory structure to enhance m
 ├── tests/                 # All unit, integration, and end-to-end tests
 │   ├── __init__.py
 │   ├── test_app.py
-│   ├── test_task_1.py
-│   └── test_task_3.py
+│   └── test_all_features.py
 ├── data/                  # Static data, templates, or input files
 │   ├── auto_reply_sample.txt
 │   ├── document1_en.txt
@@ -157,34 +155,34 @@ There are two main phases for the RAG feature: Preparation (building the knowled
 #### Phase 1: Preparation (Building the Knowledge Base)
 This phase happens typically once when the RAG system starts up or when new documents are added.
 
-1.  **Loading Documents (`src/services/rag_core.py` reads `data/` files):**
+1.  **Loading Documents (`src/services/rag_core.py` reads `data/` files):
     *   The `RAGCore` in `src/services/rag_core.py` is told which document files (e.g., `document1_en.txt`, `document2_ar.txt`) to use.
     *   It goes to the `data/` folder, opens these files, and reads their entire content. Each document is stored internally with its text and original filename (source).
-2.  **Chunking Documents (`src/services/rag_core.py`):**
+2.  **Chunking Documents (`src/services/rag_core.py`):
     *   Long documents are too big for the LLM to process at once. So, `rag_core.py` breaks each document into smaller, manageable pieces called "chunks." These chunks often overlap slightly to ensure no important context is lost between them.
-3.  **Generating Embeddings (`src/services/rag_core.py` uses `src/services/llm_utils.py`):**
+3.  **Generating Embeddings (`src/services/rag_core.py` uses `src/services/llm_utils.py`):
     *   For each small text chunk, `rag_core.py` asks `src/services/llm_utils.py` to convert the text into a numerical representation called an "embedding."
     *   An embedding is like a unique numerical fingerprint for each piece of text. Texts with similar meanings will have similar numerical fingerprints.
     *   `src/services/llm_utils.py` might use a real LLM provider (like OpenAI) or, for testing, it might use `mocks/mock_llm_service.py` (depending on settings in `src/config.py`) to generate these embeddings.
-4.  **Building the Search Index (`src/services/rag_core.py`):**
+4.  **Building the Search Index (`src/services/rag_core.py`):
     *   All these numerical embeddings are then organized into a special, highly efficient search structure, often called a FAISS index (though a simpler mock might be used if FAISS isn't installed).
     *   This index is like a super-fast library catalog for your embeddings, allowing the system to quickly find chunks that are numerically similar (and thus semantically similar) to a given query.
 
 #### Phase 2: Querying (Asking Questions)
 This phase happens every time a user asks a question to the RAG system.
 
-5.  **User Query (`src/app.py` -> `src/services/rag_core.py`):**
+5.  **User Query (`src/app.py` -> `src/services/rag_core.py`):
     *   A user submits a question (e.g., "What are the key specifications for RFQ 2025-11-11?") to your application. This query would eventually be passed to the `query` method of the `RAGCore` in `src/services/rag_core.py`.
-6.  **Embed the Query (`src/services/rag_core.py` uses `src/services/llm_utils.py`):**
+6.  **Embed the Query (`src/services/rag_core.py` uses `src/services/llm_utils.py`):
     *   Just like with the document chunks, `rag_core.py` sends the user's question to `src/services/llm_utils.py` to convert it into its own numerical embedding (fingerprint).
-7.  **Retrieve Relevant Chunks (`src/services/rag_core.py` searches the index):**
+7.  **Retrieve Relevant Chunks (`src/services/rag_core.py` searches the index):
     *   `rag_core.py` uses the numerical embedding of the user's question to search its pre-built FAISS index.
     *   It finds the "top K" (e.g., 3 or 5) document chunks whose embeddings are most similar to the query's embedding. These are the pieces of information most likely to contain the answer. It also identifies the original source documents for these chunks (citations).
-8.  **Augment and Generate Answer (`src/services/rag_core.py` uses `src/services/llm_utils.py`):**
+8.  **Augment and Generate Answer (`src/services/rag_core.py` uses `src/services/llm_utils.py`):
     *   `rag_core.py` takes the original user question AND the retrieved relevant document chunks and sends both to `src/services/llm_utils.py`.
     *   `src/services/llm_utils.py` then sends this combined information to the underlying Language Model (again, either real or mock, based on `src/config.py` and `mocks/mock_llm_service.py`).
     *   The LLM uses this specific context from your documents to generate an informed answer to the user's question.
-9.  **Return Answer and Citations (`src/services/rag_core.py` -> `src/app.py`):**
+9.  **Return Answer and Citations (`src/services/rag_core.py` -> `src/app.py`):
     *   `rag_core.py` receives the LLM's answer and then sends it back, along with the identified source documents (citations), to the part of your application that initiated the query (likely `src/app.py`).
 
 In summary, the RAG feature in `src/services/rag_core.py` acts as a smart librarian. It first reads and organizes all your `data/` documents into an easily searchable format. Then, when asked a question, it quickly finds the most relevant passages from your documents and gives them to an LLM (via `src/services/llm_utils.py`) to generate a precise answer, citing its sources.
@@ -193,26 +191,26 @@ In summary, the RAG feature in `src/services/rag_core.py` acts as a smart librar
 
 ### Data Flow and Components:
 
-1.  **Request Initiation (`src/app.py`):**
+1.  **Request Initiation (`src/app.py`):
     *   A user sends a request to the `/quote` endpoint of the FastAPI application, defined in `src/app.py`.
     *   This request contains information about the client, currency, a list of items (SKU, quantity, unit cost, margin), delivery terms, and optional notes. This data is structured according to the `QuoteRequest` model within `src/app.py`.
-2.  **Quote Calculation (`src/app.py`):**
+2.  **Quote Calculation (`src/app.py`):
     *   `src/app.py` receives the incoming request.
     *   It then iterates through each item provided in the request to calculate the `price_per_line` (unit cost adjusted by margin and quantity) and accumulates these to determine the `grand_total` for the entire quote.
-3.  **Preparing for LLM (`src/app.py`):**
+3.  **Preparing for LLM (`src/app.py`):
     *   After calculating the totals, `src/app.py` gathers summary data relevant for generating email drafts. This includes the client's name, currency, grand total, delivery terms, and any special notes.
-4.  **Calling the LLM Service (`src/app.py` -> `src/services/llm_utils.py`):**
+4.  **Calling the LLM Service (`src/app.py` -> `src/services/llm_utils.py`):
     *   `src/app.py` instantiates an `LLMService` object from `src/services/llm_utils.py`.
     *   It then calls the `generate_email_draft` method of this service twice, once for an English draft and once for an Arabic draft, passing the summary data and the desired language.
-5.  **LLM Service Processing (`src/services/llm_utils.py`):**
+5.  **LLM Service Processing (`src/services/llm_utils.py`):
     *   Inside `src/services/llm_utils.py`, the `LLMService` prepares a detailed prompt based on the `summary_data` and the requested language.
     *   It checks the `src/config.py` file to see if `USE_MOCK_LLM` is enabled.
         *   **If `USE_MOCK_LLM` is `True`:** The service interacts with `mocks/mock_llm_service.py`. This mock service simulates the behavior of a real Language Model (LLM) for testing or development purposes, returning a predefined or templated response.
         *   **If `USE_MOCK_LLM` is `False`:** The service uses the actual OpenAI API. It retrieves the `OPENAI_API_KEY` from `src/config.py` to authenticate and send the generated prompt to OpenAI's language model (e.g., GPT-3.5 Turbo or GPT-4). The LLM then generates the email draft based on the prompt.
-6.  **Receiving LLM Response (`src/services/llm_utils.py` -> `src/app.py`):**
+6.  **Receiving LLM Response (`src/services/llm_utils.py` -> `src/app.py`):
     *   The `LLMService` receives the generated email drafts (English and Arabic) from either the mock service or the actual OpenAI API.
     *   It then returns these draft texts back to `src/app.py`.
-7.  **Final Response (`src/app.py`):**
+7.  **Final Response (`src/app.py`):
     *   `src/app.py` combines all the calculated quote details (client name, currency, line items, grand total, delivery terms, notes) with the received English and Arabic email drafts into a final `QuoteResponse` object.
     *   This `QuoteResponse` is then sent back to the user as the output of the `/quote` endpoint.
 
@@ -232,6 +230,7 @@ This repository contains a Python-based microservice designed to generate quotat
     ```bash
     git clone <repository-url>
     cd Quotation Microservice
+```
 
 Before running the application or tests, it's crucial to correctly configure your Python environment, especially the `PYTHONPATH`, so that Python can find modules within the `src` directory.
 
@@ -242,7 +241,7 @@ Open PowerShell in the root directory of the project and run:
 ```powershell
 $env:PYTHONPATH = (Get-Location).Path
 ```
-*(For Linux/macOS, use: `export PYTHONPATH=$(pwd)`)`*
+*(For Linux/macOS, use: `export PYTHONPATH=$(pwd)`)*
 
 ### Install Dependencies
 
@@ -255,31 +254,16 @@ pip install -r requirements.txt
 
 ## Running Tests
 
-The project includes unit and integration tests for different functionalities.
+The project now includes a single test file `tests/test_all_features.py` that covers unit and integration tests for different functionalities.
 
-### Test Task 1: RFQ to CRM Automation
+### Run All Feature Tests
 
-This test verifies the end-to-end RFQ email processing workflow using mock services, including email parsing, field extraction, Google Sheets integration, Salesforce opportunity creation, Google Drive archiving, auto-reply, and internal alerting.
-
-```bash
-pytest ./tests/test_task_1.py -v -s
-```
-
-### Test Task 2: Quotation Microservice (FastAPI)
-
-These tests cover the FastAPI quotation microservice endpoints, ensuring correct quote calculation, handling of different line item scenarios, and proper LLM email draft generation.
+This test file verifies the end-to-end RFQ email processing workflow, FastAPI quotation microservice endpoints, and the Retrieval Augmented Generation (RAG) pipeline.
 
 ```bash
-pytest ./tests/test_task_2.py -v -s
+pytest ./tests/test_all_features.py -v -s
 ```
 
-### Test Task 3: RAG Knowledge Base
-
-This test validates the Retrieval Augmented Generation (RAG) pipeline, including document loading, chunking, embedding, FAISS indexing, and querying with both English and Arabic language support for context retrieval.
-
-```bash
-pytest ./tests/test_task_3.py -v -s
-```
 
 ## Running with Docker
 
@@ -322,8 +306,3 @@ docker logs quotation-server
 You should see output from Uvicorn indicating that it's starting up.
 
 Then, you can try accessing your API, for example, by making a request to `http://localhost:8000/docs` in your web browser to see the FastAPI interactive documentation.
-```
-
-Project Info Video : https://drive.google.com/file/d/11omBxY5G4DHZng048d_J2pue0Sy4-eJs/view?usp=sharing
-
-Project Creation(using AI tool) Demo : https://drive.google.com/file/d/1kn7kwRM16sObDN2kYpz4lF2gZsWsmjfq/view?usp=sharing
